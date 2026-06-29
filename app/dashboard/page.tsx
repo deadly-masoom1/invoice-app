@@ -39,7 +39,7 @@ export default function Dashboard() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Salam, {userName}! 👋</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Hey, {userName}! 👋</h1>
         <p style={{ color: 'var(--muted)', fontSize: 14 }}>Aapka invoice dashboard</p>
       </div>
 
