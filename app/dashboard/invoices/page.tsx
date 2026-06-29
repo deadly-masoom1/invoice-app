@@ -36,7 +36,7 @@ export default function InvoicesPage() {
 
       <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
         <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-        <input placeholder="Invoice ya client search karo..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 40 }} />
+        <input placeholder="Search invoices or clients..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 40 }} />
       </div>
 
       {loading ? (
@@ -44,8 +44,8 @@ export default function InvoicesPage() {
       ) : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <FileText size={40} style={{ color: 'var(--muted)', marginBottom: 12 }} />
-          <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>Koi invoice nahi mila</p>
-          <Link href="/dashboard/invoices/new" className="btn btn-primary"><Plus size={16} /> Invoice Banao</Link>
+          <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>No invoice was found.</p>
+          <Link href="/dashboard/invoices/new" className="btn btn-primary"><Plus size={16} /> Create an invoice.</Link>
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
