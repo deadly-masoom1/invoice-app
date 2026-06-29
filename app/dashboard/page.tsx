@@ -40,7 +40,7 @@ export default function Dashboard() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 4 }}>Hey, {userName}! 👋</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14 }}>Aapka invoice dashboard</p>
+        <p style={{ color: 'var(--muted)', fontSize: 14 }}>Welcome to Your Invoice dashboard</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
@@ -68,9 +68,9 @@ export default function Dashboard() {
         {recentInvoices.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
             <FileText size={32} style={{ marginBottom: 12, opacity: 0.4 }} />
-            <p style={{ fontSize: 14, marginBottom: '1rem' }}>Abhi koi invoice nahi hai</p>
+            <p style={{ fontSize: 14, marginBottom: '1rem' }}>No invoices found.</p>
             <Link href="/dashboard/invoices/new" className="btn btn-primary">
-              <Plus size={16} /> Pehla Invoice Banao
+              <Plus size={16} /> Create Your First Invoice
             </Link>
           </div>
         ) : (
