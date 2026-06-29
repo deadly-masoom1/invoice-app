@@ -63,7 +63,7 @@ export default function NewInvoicePage() {
   const total = subtotal + taxAmount
 
   async function saveInvoice() {
-    if (!invoice.client_name) return alert('Client ka naam zaroori hai')
+    if (!invoice.client_name) return alert('Client name is required')
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase.from('invoices').insert({
@@ -90,8 +90,8 @@ export default function NewInvoicePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
         <div className="card">
-          <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aapki Details</h2>
-          {[['from_name','Aapka Naam','Ahmed Ali'],['from_email','Email','ahmed@example.com'],['from_phone','Phone','0300-1234567'],['from_address','Address','Gujranwala, Punjab']].map(([k,l,p]) => (
+          <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Details</h2>
+          {[['from_name','Your Naam','Ahmed Ali'],['from_email','Email','ahmed@example.com'],['from_phone','Phone','0300-1234567'],['from_address','Address','Gujranwala, Punjab']].map(([k,l,p]) => (
             <div key={k} style={{ marginBottom: '0.75rem' }}>
               <label>{l}</label>
               <input value={(userInfo as any)[k]} onChange={e => setUserInfo(prev => ({ ...prev, [k]: e.target.value }))} placeholder={p} />
@@ -103,14 +103,14 @@ export default function NewInvoicePage() {
           <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Client Details</h2>
           {clients.length > 0 && (
             <div style={{ marginBottom: '0.75rem' }}>
-              <label>Saved Client se fill karo</label>
+              <label>Fill it using saved clients.</label>
               <select onChange={e => fillClient(e.target.value)} defaultValue="">
                 <option value="">— Select Client —</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
           )}
-          {[['client_name','Client Naam *','Raza Traders'],['client_email','Email','client@example.com'],['client_phone','Phone','0321-9876543'],['client_address','Address','Lahore, Punjab']].map(([k,l,p]) => (
+          {[['client_name','Client Name *','Wales Traders'],['client_email','Email','client@example.com'],['client_phone','Phone','+44 7911 123456'],['client_address','Address','London, England (UK)']].map(([k,l,p]) => (
             <div key={k} style={{ marginBottom: '0.75rem' }}>
               <label>{l}</label>
               <input value={(invoice as any)[k]} onChange={e => setInvoice(prev => ({ ...prev, [k]: e.target.value }))} placeholder={p} />
@@ -145,7 +145,7 @@ export default function NewInvoicePage() {
           <tbody>
             {items.map((item, i) => (
               <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '8px', width: '45%' }}><input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} placeholder="Service ya product" /></td>
+                <td style={{ padding: '8px', width: '45%' }}><input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} placeholder="Service or product" /></td>
                 <td style={{ padding: '8px', width: '12%' }}><input type="number" value={item.qty} onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} min="1" /></td>
                 <td style={{ padding: '8px', width: '20%' }}><input type="number" value={item.rate} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} min="0" /></td>
                 <td style={{ padding: '8px', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(item.qty * item.rate, invoice.currency)}</td>
@@ -159,7 +159,7 @@ export default function NewInvoicePage() {
           </tbody>
         </table>
         <button className="btn btn-ghost" style={{ marginTop: '0.75rem' }} onClick={() => setItems(prev => [...prev, { description: '', qty: 1, rate: 0, total: 0 }])}>
-          <Plus size={15} /> Item Add Karo
+          <Plus size={15} /> Add an item.
         </button>
         <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ minWidth: 220 }}>
