@@ -30,7 +30,7 @@ export default function ClientsPage() {
   }
 
   async function deleteClient(id: string) {
-    if (!confirm('Delete karna chahte ho?')) return
+    if (!confirm('Are you sure you want to delete this invoice?')) return
     await supabase.from('clients').delete().eq('id', id)
     load()
   }
@@ -43,22 +43,22 @@ export default function ClientsPage() {
           <p style={{ color: 'var(--muted)', fontSize: 14 }}>{clients.length} clients registered</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus size={16} /> Client Add Karo
+          <Plus size={16} /> Add a New Client
         </button>
       </div>
 
       {showForm && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: '1rem' }}>Naya Client</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: '1rem' }}>New Client</h2>
           <form onSubmit={addClient}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div><label>Naam *</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Raza Traders" /></div>
-              <div><label>Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="0321-1234567" /></div>
+              <div><label>Naam *</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Wales Traders" /></div>
+              <div><label>Phone</label><input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+44 7911 123456" /></div>
               <div><label>Email</label><input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="client@example.com" /></div>
-              <div><label>Address</label><input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Lahore, Punjab" /></div>
+              <div><label>Address</label><input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="London, England(UK)" /></div>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save Karo'}</button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save it'}</button>
               <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </form>
@@ -70,8 +70,8 @@ export default function ClientsPage() {
       ) : clients.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <Users size={40} style={{ color: 'var(--muted)', marginBottom: 12 }} />
-          <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>Abhi koi client nahi hai</p>
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}><Plus size={16} /> Pehla Client Add Karo</button>
+          <p style={{ color: 'var(--muted)', marginBottom: '1rem' }}>There are no clients right now.</p>
+          <button className="btn btn-primary" onClick={() => setShowForm(true)}><Plus size={16} />Add the first client.</button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
