@@ -25,10 +25,10 @@ export default function AuthPage() {
         options: { data: { full_name: name } }
       })
       if (error) setError(error.message)
-      else setMessage('Account ban gaya! Email check karo confirmation ke liye.')
+      else setMessage('Account created successfully! You can now login.')
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError('Email ya password galat hai.')
+      if (error) setError('Wrong Email or password!')
       else router.push('/dashboard')
     }
     setLoading(false)
@@ -59,7 +59,7 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit}>
             {mode === 'signup' && (
               <div style={{ marginBottom: '1rem' }}>
-                <label>Aapka Naam</label>
+                <label>Your Name</label>
                 <input type="text" placeholder="Ahmed Ali" value={name} onChange={e => setName(e.target.value)} required />
               </div>
             )}
@@ -76,7 +76,7 @@ export default function AuthPage() {
             {message && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#4ade80', marginBottom: '1rem' }}>{message}</div>}
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }} disabled={loading}>
-              {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Account Banao'}
+              {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
             </button>
           </form>
         </div>
