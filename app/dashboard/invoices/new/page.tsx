@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, type InvoiceItem } from '@/lib/supabase'
-import { Plus, Trash2, Save, Lock } from 'lucide-react'
+import { Plus, Trash2, Save, Lock, Upload, Link as LinkIcon } from 'lucide-react'
 
 const CURRENCIES = ['PKR', 'USD', 'GBP', 'EUR', 'AED']
 const CURRENCY_SYMBOLS: Record<string, string> = { PKR: 'Rs.', USD: '$', GBP: '£', EUR: '€', AED: 'AED' }
@@ -33,6 +33,10 @@ export default function NewInvoicePage() {
     client_address: '',
   })
   const [items, setItems] = useState<InvoiceItem[]>([{ description: '', qty: 1, rate: 0, total: 0 }])
+  const [logoUrl, setLogoUrl] = useState('')
+  const [logoMode, setLogoMode] = useState<'upload' | 'url'>('upload')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [brandColor, setBrandColor] = useState('#111111')
 
   useEffect(() => {
     async function load() {
@@ -73,6 +77,23 @@ export default function NewInvoicePage() {
     if (c) setInvoice(prev => ({ ...prev, client_name: c.name, client_email: c.email || '', client_phone: c.phone || '', client_address: c.address || '' }))
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingLogo(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${user!.id}/logo.${fileExt}`
+    const { error } = await supabase.storage.from('logos').upload(filePath, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('logos').getPublicUrl(filePath)
+      setLogoUrl(data.publicUrl)
+    } else {
+      alert('Logo upload failed: ' + error.message)
+    }
+    setUploadingLogo(false)
+  }
+
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0)
   const taxAmount = subtotal * invoice.tax_rate / 100
   const total = subtotal + taxAmount
@@ -84,6 +105,8 @@ export default function NewInvoicePage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase.from('invoices').insert({
       ...invoice, ...userInfo, user_id: user!.id, items, subtotal, tax_amount: taxAmount, total,
+      logo_url: isPro ? logoUrl : null,
+      brand_color: isPro ? brandColor : '#111111',
     }).select().single()
     if (!error && data) router.push(`/dashboard/invoices/${data.id}`)
     else { alert('Error: ' + error?.message); setSaving(false) }
@@ -113,7 +136,7 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
-        <a href="https://wa.me/923286493492?text=I want to upgrade to Pro - InvoicePK" target="_blank" rel="noopener noreferrer"
+        <a href="https://wa.me/923001234567?text=I want to upgrade to Pro - InvoicePK" target="_blank" rel="noopener noreferrer"
           className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, textDecoration: 'none' }}>
           Upgrade to Pro — WhatsApp
         </a>
@@ -187,6 +210,54 @@ export default function NewInvoicePage() {
           <div><label>Tax %</label><input type="number" value={invoice.tax_rate} onChange={e => setInvoice(p => ({ ...p, tax_rate: parseFloat(e.target.value) || 0 }))} min="0" max="100" /></div>
         </div>
       </div>
+
+      {isPro && (
+        <div className="card" style={{ marginBottom: '1rem', border: '1px solid var(--accent)' }}>
+          <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            ⭐ Pro Branding
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <div>
+              <label>Logo</label>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <button type="button" onClick={() => setLogoMode('upload')} className="btn" style={{
+                  fontSize: 12, padding: '6px 12px',
+                  background: logoMode === 'upload' ? 'var(--accent)' : 'var(--surface2)',
+                  color: logoMode === 'upload' ? '#fff' : 'var(--muted)', border: 'none'
+                }}>
+                  <Upload size={12} /> Upload
+                </button>
+                <button type="button" onClick={() => setLogoMode('url')} className="btn" style={{
+                  fontSize: 12, padding: '6px 12px',
+                  background: logoMode === 'url' ? 'var(--accent)' : 'var(--surface2)',
+                  color: logoMode === 'url' ? '#fff' : 'var(--muted)', border: 'none'
+                }}>
+                  <LinkIcon size={12} /> Paste URL
+                </button>
+              </div>
+              {logoMode === 'upload' ? (
+                <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
+              ) : (
+                <input type="text" placeholder="https://example.com/logo.png" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} />
+              )}
+              {uploadingLogo && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>Uploading...</p>}
+              {logoUrl && !uploadingLogo && (
+                <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <img src={logoUrl} alt="Logo preview" style={{ height: 40, borderRadius: 6, background: '#fff', padding: 4 }} />
+                  <span style={{ fontSize: 12, color: '#4ade80' }}>✓ Logo set</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <label>Brand Color</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)} style={{ width: 44, height: 38, padding: 2, cursor: 'pointer' }} />
+                <input type="text" value={brandColor} onChange={e => setBrandColor(e.target.value)} style={{ flex: 1 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: '1rem' }}>
         <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items / Services</h2>
