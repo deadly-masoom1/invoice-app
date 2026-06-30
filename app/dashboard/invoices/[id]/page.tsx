@@ -12,10 +12,17 @@ export default function InvoiceViewPage() {
   const { id } = useParams()
   const router = useRouter()
   const [inv, setInv] = useState<any>(null)
+  const [isPro, setIsPro] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    supabase.from('invoices').select('*').eq('id', id).single().then(({ data }) => setInv(data))
+    supabase.from('invoices').select('*').eq('id', id).single().then(async ({ data }) => {
+      setInv(data)
+      if (data) {
+        const { data: profile } = await supabase.from('profiles').select('is_pro').eq('id', data.user_id).single()
+        if (profile?.is_pro) setIsPro(true)
+      }
+    })
   }, [id])
 
   async function deleteInvoice() {
@@ -40,9 +47,13 @@ export default function InvoiceViewPage() {
       </div>
 
       <div ref={printRef} style={{ background: '#fff', color: '#111', borderRadius: 12, padding: '3rem', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '2px solid #111' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: `2px solid ${inv.brand_color || '#111'}` }}>
           <div>
-            <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: -2, color: '#111' }}>INVOICE</div>
+            {inv.logo_url ? (
+              <img src={inv.logo_url} alt="Logo" style={{ height: 60, marginBottom: 12, objectFit: 'contain' }} />
+            ) : (
+              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: -2, color: inv.brand_color || '#111' }}>INVOICE</div>
+            )}
             <div style={{ fontSize: 16, color: '#888', fontFamily: 'serif', direction: 'rtl', marginTop: 4 }}>بل / رسید</div>
             <div style={{ marginTop: '1rem' }}>
               <div style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>{inv.from_name || 'Your Business'}</div>
@@ -69,7 +80,7 @@ export default function InvoiceViewPage() {
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: '1.5rem' }}>
           <thead>
-            <tr style={{ background: '#111' }}>
+            <tr style={{ background: inv.brand_color || '#111' }}>
               {['Description', 'Qty', 'Rate', 'Total'].map(h => (
                 <th key={h} style={{ color: '#fff', padding: '10px 14px', textAlign: 'left', fontWeight: 500 }}>{h}</th>
               ))}
@@ -91,7 +102,7 @@ export default function InvoiceViewPage() {
           <div style={{ minWidth: 240 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', padding: '5px 0' }}><span>Subtotal</span><span>{fmt(inv.subtotal, inv.currency)}</span></div>
             {inv.tax_rate > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', padding: '5px 0' }}><span>Tax ({inv.tax_rate}%)</span><span>{fmt(inv.tax_amount, inv.currency)}</span></div>}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, fontWeight: 800, color: '#111', borderTop: '2px solid #111', paddingTop: 10, marginTop: 6 }}><span>Total</span><span>{fmt(inv.total, inv.currency)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, fontWeight: 800, color: '#111', borderTop: `2px solid ${inv.brand_color || '#111'}`, paddingTop: 10, marginTop: 6 }}><span>Total</span><span>{fmt(inv.total, inv.currency)}</span></div>
           </div>
         </div>
 
@@ -102,9 +113,11 @@ export default function InvoiceViewPage() {
           </div>
         )}
 
-        <div style={{ marginTop: '2.5rem', paddingTop: '1rem', borderTop: '1px solid #eee', fontSize: 12, color: '#aaa', textAlign: 'center' }}>
-          Generated with InvoicePK · invoicepk.com
-        </div>
+        {!isPro && (
+          <div style={{ marginTop: '2.5rem', paddingTop: '1rem', borderTop: '1px solid #eee', fontSize: 12, color: '#aaa', textAlign: 'center' }}>
+            Generated with InvoicePK · invoicepk.com
+          </div>
+        )}
       </div>
     </div>
   )
