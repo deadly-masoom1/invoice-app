@@ -19,7 +19,7 @@ export default function AdminPage() {
         router.push('/dashboard')
         return
       }
-      const { data: profiles } = await supabase.from('profiles').select('*')
+      const { data: profiles } = await supabase.from('admin_users').select('*')
       const { data: invoices } = await supabase.from('invoices').select('user_id')
       const invoiceCount: Record<string, number> = {}
       invoices?.forEach((inv: any) => {
@@ -69,7 +69,7 @@ export default function AdminPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)' }}>
-                {['User ID', 'Invoices Made', 'Status', 'Pro Since', 'Action'].map(h => (
+                {['Email', 'Name', 'Invoices Made', 'Status', 'Pro Since', 'Action'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '12px 16px', color: 'var(--muted)', fontWeight: 500, fontSize: 12 }}>{h}</th>
                 ))}
               </tr>
@@ -78,7 +78,7 @@ export default function AdminPage() {
               {users.map(user => (
                 <tr key={user.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: 12, color: 'var(--muted)' }}>
-                    {user.id.slice(0, 8)}...
+                    {user.email || '—'}</td><td style={{ padding: '14px 16px', fontSize: 13 }}>{user.full_name || '—'}
                   </td>
                   <td style={{ padding: '14px 16px', fontWeight: 600 }}>{user.invoice_count}</td>
                   <td style={{ padding: '14px 16px' }}>
