@@ -113,7 +113,7 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
-        <a href="https://wa.me/923001234567?text=I want to upgrade to Pro - InvoicePK" target="_blank" rel="noopener noreferrer"
+        <a href="https://wa.me/923286493492?text=I want to upgrade to Pro - InvoicePK" target="_blank" rel="noopener noreferrer"
           className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, textDecoration: 'none' }}>
           Upgrade to Pro — WhatsApp
         </a>
