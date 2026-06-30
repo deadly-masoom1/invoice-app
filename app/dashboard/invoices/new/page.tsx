@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, type InvoiceItem } from '@/lib/supabase'
-import { Plus, Trash2, Save } from 'lucide-react'
+import { Plus, Trash2, Save, Lock } from 'lucide-react'
 
 const CURRENCIES = ['PKR', 'USD', 'GBP', 'EUR', 'AED']
 const CURRENCY_SYMBOLS: Record<string, string> = { PKR: 'Rs.', USD: '$', GBP: '£', EUR: '€', AED: 'AED' }
+const FREE_LIMIT = 3
 
 function fmt(n: number, cur: string) {
   return `${CURRENCY_SYMBOLS[cur] || cur} ${n.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`
@@ -15,6 +16,9 @@ export default function NewInvoicePage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [clients, setClients] = useState<any[]>([])
+  const [invoiceCount, setInvoiceCount] = useState(0)
+  const [isPro, setIsPro] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const [userInfo, setUserInfo] = useState({ from_name: '', from_email: '', from_phone: '', from_address: '' })
   const [invoice, setInvoice] = useState({
     invoice_number: 'INV-001',
@@ -35,11 +39,22 @@ export default function NewInvoicePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserInfo({ from_name: user.user_metadata?.full_name || '', from_email: user.email || '', from_phone: '', from_address: '' })
+        // Check pro status
+        const { data: profile } = await supabase.from('profiles').select('is_pro').eq('id', user.id).single()
+        if (profile?.is_pro) setIsPro(true)
+      
+        const { data } = await supabase.from('clients').select('*').order('name')
+        setClients(data || [])
+        const { count } = await supabase.from('invoices').select('*', { count: 'exact', head: true })
+        const total = count || 0
+        setInvoiceCount(total)
+        setInvoice(prev => ({ ...prev, invoice_number: `INV-${String(total + 1).padStart(3, '0')}` }))
+
+        // Show upgrade modal if limit reached
+        if (total >= FREE_LIMIT && !profile?.is_pro) {
+          setShowUpgrade(true)
+        }
       }
-      const { data } = await supabase.from('clients').select('*').order('name')
-      setClients(data || [])
-      const { count } = await supabase.from('invoices').select('*', { count: 'exact', head: true })
-      setInvoice(prev => ({ ...prev, invoice_number: `INV-${String((count || 0) + 1).padStart(3, '0')}` }))
     }
     load()
   }, [])
@@ -63,24 +78,63 @@ export default function NewInvoicePage() {
   const total = subtotal + taxAmount
 
   async function saveInvoice() {
+    if (!isPro && invoiceCount >= FREE_LIMIT) { setShowUpgrade(true); return }
     if (!invoice.client_name) return alert('Client name is required')
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase.from('invoices').insert({
-      ...invoice,
-      ...userInfo,
-      user_id: user!.id,
-      items,
-      subtotal,
-      tax_amount: taxAmount,
-      total,
+      ...invoice, ...userInfo, user_id: user!.id, items, subtotal, tax_amount: taxAmount, total,
     }).select().single()
     if (!error && data) router.push(`/dashboard/invoices/${data.id}`)
     else { alert('Error: ' + error?.message); setSaving(false) }
   }
 
+  if (showUpgrade) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+      <div className="card" style={{ maxWidth: 480, width: '100%', textAlign: 'center', padding: '3rem' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+          <Lock size={28} color="var(--accent)" />
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Free Limit Reached</h2>
+        <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: '0.5rem' }}>
+          You have used your <strong style={{ color: 'var(--text)' }}>{FREE_LIMIT} free invoices</strong>.
+        </p>
+        <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: '2rem' }}>
+          Upgrade to Pro to create unlimited invoices.
+        </p>
+
+        <div style={{ background: 'var(--surface2)', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid var(--accent)' }}>
+          <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Pro Plan</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--accent)' }}>Rs. 999<span style={{ fontSize: 14, fontWeight: 400, color: 'var(--muted)' }}>/month</span></div>
+          <div style={{ marginTop: '1rem', fontSize: 13, color: 'var(--muted)', textAlign: 'left' }}>
+            {['Unlimited invoices', 'Custom logo upload', 'Priority support', 'PDF branding removed'].map(f => (
+              <div key={f} style={{ padding: '4px 0' }}>✓ {f}</div>
+            ))}
+          </div>
+        </div>
+
+        <a href="https://wa.me/923001234567?text=I want to upgrade to Pro - InvoicePK" target="_blank" rel="noopener noreferrer"
+          className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15, textDecoration: 'none' }}>
+          Upgrade to Pro — WhatsApp
+        </a>
+        <button onClick={() => router.push('/dashboard')} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}>
+          Back to Dashboard
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      {!isPro && (
+        <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10, padding: '10px 16px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+          <span style={{ color: '#fbbf24' }}>⚡ Free Plan: <strong>{invoiceCount}/{FREE_LIMIT}</strong> invoices used</span>
+          <button onClick={() => setShowUpgrade(true)} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Upgrade to Pro
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: 22, fontWeight: 600 }}>New Invoice</h1>
         <button className="btn btn-primary" onClick={saveInvoice} disabled={saving}>
@@ -91,7 +145,7 @@ export default function NewInvoicePage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
         <div className="card">
           <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Details</h2>
-          {[['from_name','Your Naam','Ahmed Ali'],['from_email','Email','ahmed@example.com'],['from_phone','Phone','0300-1234567'],['from_address','Address','Gujranwala, Punjab']].map(([k,l,p]) => (
+          {[['from_name','Your Name','Ahmed Ali'],['from_email','Email','ahmed@example.com'],['from_phone','Phone','0300-1234567'],['from_address','Address','Gujranwala, Punjab']].map(([k,l,p]) => (
             <div key={k} style={{ marginBottom: '0.75rem' }}>
               <label>{l}</label>
               <input value={(userInfo as any)[k]} onChange={e => setUserInfo(prev => ({ ...prev, [k]: e.target.value }))} placeholder={p} />
@@ -103,14 +157,14 @@ export default function NewInvoicePage() {
           <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Client Details</h2>
           {clients.length > 0 && (
             <div style={{ marginBottom: '0.75rem' }}>
-              <label>Fill it using saved clients.</label>
+              <label>Fill from saved client</label>
               <select onChange={e => fillClient(e.target.value)} defaultValue="">
                 <option value="">— Select Client —</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
           )}
-          {[['client_name','Client Name *','Wales Traders'],['client_email','Email','client@example.com'],['client_phone','Phone','+44 7911 123456'],['client_address','Address','London, England (UK)']].map(([k,l,p]) => (
+          {[['client_name','Client Name *','Raza Traders'],['client_email','Email','client@example.com'],['client_phone','Phone','0321-9876543'],['client_address','Address','Lahore, Punjab']].map(([k,l,p]) => (
             <div key={k} style={{ marginBottom: '0.75rem' }}>
               <label>{l}</label>
               <input value={(invoice as any)[k]} onChange={e => setInvoice(prev => ({ ...prev, [k]: e.target.value }))} placeholder={p} />
@@ -145,7 +199,7 @@ export default function NewInvoicePage() {
           <tbody>
             {items.map((item, i) => (
               <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '8px', width: '45%' }}><input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} placeholder="Service or product" /></td>
+                <td style={{ padding: '8px', width: '45%' }}><input value={item.description} onChange={e => updateItem(i, 'description', e.target.value)} placeholder="Service or product name" /></td>
                 <td style={{ padding: '8px', width: '12%' }}><input type="number" value={item.qty} onChange={e => updateItem(i, 'qty', parseFloat(e.target.value) || 0)} min="1" /></td>
                 <td style={{ padding: '8px', width: '20%' }}><input type="number" value={item.rate} onChange={e => updateItem(i, 'rate', parseFloat(e.target.value) || 0)} min="0" /></td>
                 <td style={{ padding: '8px', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(item.qty * item.rate, invoice.currency)}</td>
@@ -159,7 +213,7 @@ export default function NewInvoicePage() {
           </tbody>
         </table>
         <button className="btn btn-ghost" style={{ marginTop: '0.75rem' }} onClick={() => setItems(prev => [...prev, { description: '', qty: 1, rate: 0, total: 0 }])}>
-          <Plus size={15} /> Add an item.
+          <Plus size={15} /> Add Item
         </button>
         <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ minWidth: 220 }}>
