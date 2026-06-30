@@ -2,7 +2,11 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, FileText, Users, LogOut, Plus } from 'lucide-react'
+import { LayoutDashboard, FileText, Users, LogOut, Plus, Shield } from 'lucide-react'
+import ProStatus from './ProStatus'
+import { useEffect, useState } from 'react'
+
+const ADMIN_EMAIL = 'abdullahnaseer0319@gmail.com'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +17,13 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email === ADMIN_EMAIL) setIsAdmin(true)
+    })
+  }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -43,12 +54,23 @@ export default function Sidebar() {
               textDecoration: 'none', fontSize: 14, fontWeight: active ? 500 : 400,
               marginBottom: 2, transition: 'all 0.15s',
             }}>
-              <Icon size={16} />
-              {label}
+              <Icon size={16} />{label}
             </Link>
           )
         })}
+        {isAdmin && (
+          <Link href="/dashboard/admin" style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8,
+            color: pathname === '/dashboard/admin' ? 'var(--text)' : 'var(--muted)',
+            background: pathname === '/dashboard/admin' ? 'var(--surface2)' : 'transparent',
+            textDecoration: 'none', fontSize: 14, marginBottom: 2, transition: 'all 0.15s',
+          }}>
+            <Shield size={16} /> Admin
+          </Link>
+        )}
       </nav>
+
+      <ProStatus />
 
       <div style={{ padding: '1rem', borderTop: '1px solid var(--border)' }}>
         <button onClick={handleLogout} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
